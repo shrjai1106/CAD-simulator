@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAD/CAE/CFD Car Engineering Demo | PUMO Technovation Malaysia</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:#060A12;font-family:'Barlow',sans-serif;overflow:hidden;}
+#app{display:grid;grid-template-columns:1fr 290px;height:100vh;}
+#cv-area{position:relative;overflow:hidden;background:#060A12;}
+canvas{display:block;width:100%;height:100%;}
+
+/* BRANDING */
+#brand{position:absolute;top:16px;left:20px;display:flex;align-items:center;gap:10px;z-index:20;pointer-events:none;}
+#brand .bt{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1;}
+#brand .bt span{color:#F5A800;}
+#brand .bs{font-size:8px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+
+/* MODE LABEL */
+#mode-label{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 16px;border-radius:20px;border:1px solid;transition:all .4s;}
+#mode-label.cad{color:#F5A800;border-color:rgba(245,168,0,.35);background:rgba(245,168,0,.08);}
+#mode-label.wire{color:#5599FF;border-color:rgba(85,153,255,.35);background:rgba(85,153,255,.08);}
+#mode-label.harness{color:#44FFAA;border-color:rgba(68,255,170,.35);background:rgba(68,255,170,.08);}
+#mode-label.fea{color:#FF6644;border-color:rgba(255,102,68,.35);background:rgba(255,102,68,.08);}
+#mode-label.cfd{color:#44CCFF;border-color:rgba(68,204,255,.35);background:rgba(68,204,255,.08);}
+
+/* STATS HUD */
+#hud{position:absolute;bottom:18px;left:20px;display:flex;gap:14px;}
+.hud-item{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px 12px;backdrop-filter:blur(4px);}
+.hud-label{font-size:8px;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;}
+.hud-val{font-size:14px;font-weight:700;font-family:'Barlow Condensed',sans-serif;margin-top:1px;}
+#hint-drag{position:absolute;bottom:20px;right:298px;font-size:9px;color:rgba(255,255,255,.18);letter-spacing:1px;text-transform:uppercase;transition:opacity 1.5s;}
+
+/* PANEL */
+#panel{background:#0A1020;border-left:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;padding:0;overflow:hidden;}
+#panel-top{padding:16px 16px 12px;border-bottom:1px solid rgba(255,255,255,.05);}
+#panel-top .pt{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:#fff;letter-spacing:.5px;}
+#panel-top .pt span{color:#F5A800;}
+#panel-top .ps{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+#panel-body{flex:1;overflow-y:auto;padding:14px 14px;display:flex;flex-direction:column;gap:12px;}
+#panel-body::-webkit-scrollbar{width:3px;}
+#panel-body::-webkit-scrollbar-thumb{background:rgba(245,168,0,.2);border-radius:2px;}
+
+.sec{font-size:8px;font-weight:700;color:rgba(245,168,0,.6);letter-spacing:2px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.04);}
+
+/* MODE BUTTONS */
+.modes{display:flex;flex-direction:column;gap:5px;}
+.mbtn{width:100%;padding:9px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px;text-align:left;}
+.mbtn:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);}
+.mbtn.active{border-width:1.5px;}
+.mbtn.active.cad{background:rgba(245,168,0,.08);border-color:rgba(245,168,0,.4);}
+.mbtn.active.wire{background:rgba(85,153,255,.08);border-color:rgba(85,153,255,.4);}
+.mbtn.active.harness{background:rgba(68,255,170,.06);border-color:rgba(68,255,170,.4);}
+.mbtn.active.fea{background:rgba(255,102,68,.07);border-color:rgba(255,102,68,.4);}
+.mbtn.active.cfd{background:rgba(68,204,255,.07);border-color:rgba(68,204,255,.4);}
+.mbtn .mi{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.mbtn.active.cad .mi{background:rgba(245,168,0,.15);}
+.mbtn.active.wire .mi{background:rgba(85,153,255,.15);}
+.mbtn.active.harness .mi{background:rgba(68,255,170,.12);}
+.mbtn.active.fea .mi{background:rgba(255,102,68,.13);}
+.mbtn.active.cfd .mi{background:rgba(68,204,255,.12);}
+.mbtn .mt{display:flex;flex-direction:column;}
+.mbtn .mn{font-size:11px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;}
+.mbtn.active.cad .mn{color:#F5A800;}
+.mbtn.active.wire .mn{color:#5599FF;}
+.mbtn.active.harness .mn{color:#44FFAA;}
+.mbtn.active.fea .mn{color:#FF6644;}
+.mbtn.active.cfd .mn{color:#44CCFF;}
+.mbtn:not(.active) .mn{color:rgba(255,255,255,.45);}
+.mbtn .md{font-size:9px;color:rgba(255,255,255,.25);margin-top:1px;}
+
+/* INFO BOX */
+.info-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:10px 12px;}
+.info-box .ib-h{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;margin-bottom:6px;}
+.info-box p{font-size:11px;color:rgba(255,255,255,.45);line-height:1.7;}
+#ib-cad .ib-h{color:#F5A800;}
+#ib-wire .ib-h{color:#5599FF;}
+#ib-harness .ib-h{color:#44FFAA;}
+#ib-fea .ib-h{color:#FF6644;}
+#ib-cfd .ib-h{color:#44CCFF;}
+
+/* LEGEND */
+.legend{display:flex;flex-direction:column;gap:4px;}
+.leg-row{display:flex;align-items:center;gap:7px;font-size:10px;color:rgba(255,255,255,.5);}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.leg-line{width:18px;height:3px;border-radius:2px;flex-shrink:0;}
+
+/* ROT CONTROLS */
+.rot-grid{display:flex;flex-direction:column;gap:7px;}
+.rc{display:flex;flex-direction:column;gap:3px;}
+.rc-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;display:flex;justify-content:space-between;align-items:center;}
+.rc-val{font-size:9px;font-family:'JetBrains Mono',monospace;min-width:36px;text-align:right;}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;outline:none;border-radius:2px;background:rgba(255,255,255,.08);cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;cursor:pointer;border:2px solid #060A12;}
+#rx::-webkit-slider-thumb{background:#FF5555;}
+#ry::-webkit-slider-thumb{background:#55FF88;}
+#rz::-webkit-slider-thumb{background:#5588FF;}
+
+/* BUTTON ROW */
+.btn-row{display:flex;gap:5px;}
+.cbtn{flex:1;padding:7px 6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:rgba(255,255,255,.45);font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.3px;cursor:pointer;transition:all .2s;}
+.cbtn:hover,.cbtn.on{background:rgba(245,168,0,.08);border-color:rgba(245,168,0,.3);color:#F5A800;}
+
+/* FEA COLORBAR */
+#fea-bar{display:none;height:14px;border-radius:4px;background:linear-gradient(90deg,#0044CC,#0099FF,#00FFAA,#AAFF00,#FFCC00,#FF6600,#FF0000);margin-bottom:4px;}
+#fea-labels{display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.4);font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="cv-area">
+  <canvas id="c"></canvas>
+  <div id="brand">
+    <svg width="26" height="17" viewBox="0 0 40 26" style="border-radius:2px;flex-shrink:0">
+      <rect width="40" height="26" fill="#CC0001"/>
+      <rect y="4" width="40" height="4" fill="#fff"/><rect y="10" width="40" height="4" fill="#CC0001"/>
+      <rect y="14" width="40" height="4" fill="#fff"/><rect y="18" width="40" height="4" fill="#CC0001"/><rect y="22" width="40" height="4" fill="#fff"/>
+      <rect width="18" height="14" fill="#003F9E"/>
+      <path d="M7 4.5A3.5 3.5 0 1 1 7 11.5A2.8 2.8 0 1 0 7 4.5Z" fill="#FFCC00"/>
+      <polygon points="13,5 13.7,7.2 16,7.2 14.1,8.5 14.8,10.7 13,9.4 11.2,10.7 11.9,8.5 10,7.2 12.3,7.2" fill="#FFCC00"/>
+    </svg>
+    <div><div class="bt">PUMO <span>TECHNO</span>VATION</div><div class="bs">Malaysia · Engineering Simulation Lab</div></div>
+  </div>
+  <div id="mode-label" class="cad">CAD — Normal View</div>
+  <div id="hud">
+    <div class="hud-item"><div class="hud-label">Vertices</div><div class="hud-val" id="hv" style="color:#F5A800">284</div></div>
+    <div class="hud-item"><div class="hud-label">Faces</div><div class="hud-val" id="hf" style="color:#F5A800">142</div></div>
+    <div class="hud-item"><div class="hud-label">Mode</div><div class="hud-val" id="hm" style="color:#F5A800">CAD</div></div>
+  </div>
+  <div id="hint-drag">Drag to rotate · Scroll to zoom</div>
+</div>
+
+<div id="panel">
+  <div id="panel-top">
+    <div class="pt">PUMO <span>TECHNO</span>VATION</div>
+    <div class="ps">Automotive Engineering Demo</div>
+  </div>
+  <div id="panel-body">
+
+    <div>
+      <div class="sec">Simulation Mode</div>
+      <div class="modes">
+        <button class="mbtn active cad" id="b-cad" onclick="setMode('cad')">
+          <div class="mi">🚗</div><div class="mt"><div class="mn">CAD Normal</div><div class="md">3D solid body view</div></div>
+        </button>
+        <button class="mbtn wire" id="b-wire" onclick="setMode('wire')">
+          <div class="mi">⬡</div><div class="mt"><div class="mn">Wireframe</div><div class="md">Engineering mesh</div></div>
+        </button>
+        <button class="mbtn harness" id="b-harness" onclick="setMode('harness')">
+          <div class="mi">⚡</div><div class="mt"><div class="mn">Wiring Harness</div><div class="md">Electrical routing</div></div>
+        </button>
+        <button class="mbtn fea" id="b-fea" onclick="setMode('fea')">
+          <div class="mi">💥</div><div class="mt"><div class="mn">FEA Crash Analysis</div><div class="md">Stress & deformation</div></div>
+        </button>
+        <button class="mbtn cfd" id="b-cfd" onclick="setMode('cfd')">
+          <div class="mi">🌊</div><div class="mt"><div class="mn">CFD Aerodynamics</div><div class="md">Airflow simulation</div></div>
+        </button>
+      </div>
+    </div>
+
+    <div id="info-panel">
+      <div class="sec">About This Mode</div>
+      <div class="info-box" id="ib-cad">
+        <div class="ib-h">CAD — Computer-Aided Design</div>
+        <p>Solid 3D model generated in CATIA V5. Every surface, dimension, and tolerance is digitally defined. This model feeds directly into CAM for manufacturing and CAE for simulation.</p>
+      </div>
+      <div class="info-box" id="ib-wire" style="display:none">
+        <div class="ib-h">Engineering Wireframe</div>
+        <p>The underlying mesh structure — the skeleton of the 3D model. CAE solvers use this mesh to divide the structure into finite elements for mathematical analysis.</p>
+      </div>
+      <div class="info-box" id="ib-harness" style="display:none">
+        <div class="ib-h">Wiring Harness Design</div>
+        <p>Electrical circuit routing through the vehicle structure. Each colour represents a different circuit: power, chassis ground, CAN bus, sensor signals, and lighting.</p>
+      </div>
+      <div class="info-box" id="ib-fea" style="display:none">
+        <div class="ib-h">FEA — Crash Simulation</div>
+        <p>Von Mises stress distribution during a 64km/h frontal impact. Red zones exceed yield strength — intentional crumple zones absorb kinetic energy before it reaches the cabin.</p>
+      </div>
+      <div class="info-box" id="ib-cfd" style="display:none">
+        <div class="ib-h">CFD — Aerodynamic Flow</div>
+        <p>Computational Fluid Dynamics: streamlines coloured by velocity. Blue = slow (stagnation). Red = fast (low pressure). Used to minimise drag, lift, and improve fuel efficiency.</p>
+      </div>
+    </div>
+
+    <div id="legend-panel">
+      <div class="sec" id="leg-title">Components</div>
+      <div class="legend" id="legend-cad">
+        <div class="leg-row"><div class="leg-dot" style="background:#2E5AA0"></div>Body panels (steel)</div>
+        <div class="leg-row"><div class="leg-dot" style="background:#888FA0"></div>Bumper (PP plastic)</div>
+        <div class="leg-row"><div class="leg-dot" style="background:#B0B8CC"></div>Headlight lens (PC)</div>
+        <div class="leg-row"><div class="leg-dot" style="background:#1A1A1A"></div>Tyre (rubber)</div>
+        <div class="leg-row"><div class="leg-dot" style="background:#C0C0C0"></div>Rim (aluminium alloy)</div>
+        <div class="leg-row"><div class="leg-dot" style="background:#CC3333"></div>Brake caliper (iron)</div>
+      </div>
+      <div class="legend" id="legend-wire" style="display:none">
+        <div class="leg-row"><div class="leg-dot" style="background:#5599FF"></div>Mesh vertices</div>
+        <div class="leg-row"><div class="leg-dot" style="background:#F5A800"></div>Panel edges</div>
+        <div class="leg-row"><div class="leg-dot" style="background:rgba(85,153,255,.2)"></div>Construction lines</div>
+      </div>
+      <div class="legend" id="legend-harness" style="display:none">
+        <div class="leg-row"><div class="leg-line" style="background:#FF3333"></div>Battery +12V</div>
+        <div class="leg-row"><div class="leg-line" style="background:#111"></div>Chassis ground</div>
+        <div class="leg-row"><div class="leg-line" style="background:#FFCC00"></div>Engine ECU harness</div>
+        <div class="leg-row"><div class="leg-line" style="background:#FFFFFF"></div>Headlight circuit</div>
+        <div class="leg-row"><div class="leg-line" style="background:#00CCFF"></div>CAN bus (high)</div>
+        <div class="leg-row"><div class="leg-line" style="background:#00FF88"></div>CAN bus (low)</div>
+        <div class="leg-row"><div class="leg-line" style="background:#FF8800"></div>ABS / sensor lines</div>
+      </div>
+      <div class="legend" id="legend-fea" style="display:none">
+        <div id="fea-bar"></div>
+        <div id="fea-labels"><span>0 MPa</span><span>150 MPa</span><span>300+ MPa</span></div>
+        <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,.35);">Steel yield: ~250 MPa<br>Crumple zone: engineered failure</div>
+      </div>
+      <div class="legend" id="legend-cfd" style="display:none">
+        <div id="fea-bar" style="background:linear-gradient(90deg,#0033CC,#0099FF,#00FFCC,#FFFF00,#FF8800,#FF0000);display:block;"></div>
+        <div id="fea-labels"><span>0 m/s</span><span>45 m/s</span><span>90+ m/s</span></div>
+        <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,.35);">Test speed: 130 km/h<br>Cd target: &lt; 0.26</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec">View Controls</div>
+      <div class="rot-grid">
+        <div class="rc"><div class="rc-lbl" style="color:#FF6666">X Pitch <span class="rc-val" id="rx-v">-12°</span></div><input type="range" id="rx" min="-60" max="30" value="-12" oninput="setR('x',this.value)"></div>
+        <div class="rc"><div class="rc-lbl" style="color:#66FF88">Y Yaw <span class="rc-val" id="ry-v">38°</span></div><input type="range" id="ry" min="-180" max="180" value="38" oninput="setR('y',this.value)"></div>
+        <div class="rc"><div class="rc-lbl" style="color:#6688FF">Z Roll <span class="rc-val" id="rz-v">0°</span></div><input type="range" id="rz" min="-30" max="30" value="0" oninput="setR('z',this.value)"></div>
+      </div>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="cbtn" onclick="setV(-12,38,0)">3/4 Front</button>
+        <button class="cbtn" onclick="setV(-5,0,0)">Front</button>
+        <button class="cbtn" onclick="setV(-5,90,0)">Side</button>
+        <button class="cbtn" onclick="setV(-85,0,0)">Top</button>
+      </div>
+      <div class="btn-row" style="margin-top:5px;">
+        <button class="cbtn" id="btn-auto" onclick="toggleAuto()">▶ Auto Rotate</button>
+        <button class="cbtn" onclick="zoom=1;render()">Reset Zoom</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+const D = Math.PI/180;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const cva = document.getElementById('cv-area');
+
+let rx=-12, ry=38, rz=0, zoom=1.0;
+let mode='cad';
+let autoRot=false, animId=null;
+let drag=false, lx=0, ly=0;
+let modeAlpha=1; // for fade transitions
+let feaTime=0, cfdTime=0;
+let particles=[];
+
+/* ─── RESIZE ─── */
+function resize(){
+  canvas.width = cva.clientWidth;
+  canvas.height = cva.clientHeight;
+  initParticles();
+  render();
+}
+new ResizeObserver(resize).observe(cva);
+
+/* ─── INPUT ─── */
+canvas.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  ry+=(e.clientX-lx)*0.4; rx+=(e.clientY-ly)*0.3;
+  rx=Math.max(-80,Math.min(30,rx));
+  lx=e.clientX; ly=e.clientY;
+  syncSliders(); if(!autoRot)render();
+});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(0.4,Math.min(2.5,zoom-e.deltaY*0.001));render();},{passive:false});
+let t0x=0,t0y=0;
+canvas.addEventListener('touchstart',e=>{t0x=e.touches[0].clientX;t0y=e.touches[0].clientY;});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();ry+=(e.touches[0].clientX-t0x)*0.4;rx+=(e.touches[0].clientY-t0y)*0.3;t0x=e.touches[0].clientX;t0y=e.touches[0].clientY;syncSliders();render();},{passive:false});
+setTimeout(()=>document.getElementById('hint-drag').style.opacity='0',4000);
+
+function setR(ax,v){if(ax==='x')rx=+v;if(ax==='y')ry=+v;if(ax==='z')rz=+v;syncSliders();render();}
+function syncSliders(){
+  document.getElementById('rx').value=rx; document.getElementById('rx-v').textContent=Math.round(rx)+'°';
+  document.getElementById('ry').value=ry; document.getElementById('ry-v').textContent=Math.round(ry)+'°';
+  document.getElementById('rz').value=rz; document.getElementById('rz-v').textContent=Math.round(rz)+'°';
+}
+function setV(x,y,z){rx=x;ry=y;rz=z;syncSliders();render();}
+function toggleAuto(){
+  autoRot=!autoRot;
+  document.getElementById('btn-auto').classList.toggle('on',autoRot);
+  document.getElementById('btn-auto').textContent=autoRot?'⏸ Stop':'▶ Auto Rotate';
+  if(autoRot)loop();else cancelAnimationFrame(animId);
+}
+function loop(){animId=requestAnimationFrame(loop);ry+=0.3;feaTime+=0.02;cfdTime+=0.016;syncSliders();render();}
+
+/* ─── MODE SWITCH ─── */
+const modeNames={cad:'CAD — Normal View',wire:'Wireframe — Mesh View',harness:'Wiring Harness',fea:'FEA — Crash Analysis',cfd:'CFD — Aerodynamics'};
+const modeHud={cad:'CAD',wire:'WIRE',harness:'HARN',fea:'FEA',cfd:'CFD'};
+const modeVerts={cad:284,wire:284,harness:284,fea:284,cfd:284};
+const modeFaces={cad:142,wire:142,harness:142,fea:142,cfd:142};
+function setMode(m){
+  mode=m;
+  feaTime=0; cfdTime=0;
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('active','cad','wire','harness','fea','cfd'));
+  document.getElementById('b-'+m).classList.add('active',m);
+  const lbl=document.getElementById('mode-label');
+  lbl.className=''; lbl.classList.add(m);
+  lbl.textContent=modeNames[m];
+  document.getElementById('hm').textContent=modeHud[m];
+  ['ib-cad','ib-wire','ib-harness','ib-fea','ib-cfd'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('ib-'+m).style.display='';
+  ['legend-cad','legend-wire','legend-harness','legend-fea','legend-cfd'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('legend-'+m).style.display='';
+  if(m==='fea'){document.querySelectorAll('#fea-bar').forEach(e=>e.style.display='block');}
+  if(!autoRot)render();
+}
+
+/* ─── 3D ENGINE ─── */
+function mat(rx,ry,rz){
+  const [cX,sX]=[Math.cos(rx*D),Math.sin(rx*D)];
+  const [cY,sY]=[Math.cos(ry*D),Math.sin(ry*D)];
+  const [cZ,sZ]=[Math.cos(rz*D),Math.sin(rz*D)];
+  return [cY*cZ,cY*sZ,-sY, sX*sY*cZ-cX*sZ,sX*sY*sZ+cX*cZ,sX*cY, cX*sY*cZ+sX*sZ,cX*sY*sZ-sX*cZ,cX*cY];
+}
+function tr(v,m){return [v[0]*m[0]+v[1]*m[3]+v[2]*m[6], v[0]*m[1]+v[1]*m[4]+v[2]*m[7], v[0]*m[2]+v[1]*m[5]+v[2]*m[8]];}
+const SC=130; const FOV=480;
+function pr(v,W,H){const z=v[2]+FOV;const s=FOV/z;return [W/2+v[0]*s*zoom*SC, H/2-v[1]*s*zoom*SC, v[2]];}
+
+/* ─── LIGHTING ─── */
+const LIGHT=normalise([0.5,0.9,-0.3]);
+const LIGHT2=normalise([-0.3,0.4,0.8]);
+function normalise(v){const l=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);return[v[0]/l,v[1]/l,v[2]/l];}
+function faceNorm3d(a,b,c){
+  const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]];
+  const w=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];
+  return normalise([u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]]);
+}
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function litColor(baseHex, worldVerts, alpha=1){
+  const n=faceNorm3d(worldVerts[0],worldVerts[1],worldVerts[2]);
+  const d1=Math.max(0,dot(n,LIGHT));
+  const d2=Math.max(0,dot(n,LIGHT2))*0.25;
+  const amb=0.18;
+  const bright=Math.min(1,amb+d1*0.72+d2);
+  const r=parseInt(baseHex.slice(1,3),16);
+  const g=parseInt(baseHex.slice(3,5),16);
+  const b=parseInt(baseHex.slice(5,7),16);
+  return `rgba(${Math.round(r*bright)},${Math.round(g*bright)},${Math.round(b*bright)},${alpha})`;
+}
+function fn2d(pts){
+  const ax=pts[1][0]-pts[0][0],ay=pts[1][1]-pts[0][1];
+  const bx=pts[2][0]-pts[0][0],by=pts[2][1]-pts[0][1];
+  return ax*by-ay*bx;
+}
+function depth(pts){return pts.reduce((s,p)=>s+p[2],0)/pts.length;}
+
+/* ─── CAR GEOMETRY ─── */
+// Full front section: X = -0.2 (firewall) to 2.6 (front)
+// Y = -0.5 (bottom) to 1.0 (roof)  Z = -1.05 to 1.05 (width)
+
+const VERTS=[];
+function vv(x,y,z){VERTS.push([x,y,z]);return VERTS.length-1;}
+
+/* HOOD — 5 rows x 5 cols curved surface */
+// Row 0 — windshield base
+const h00=vv(0.10,0.820,-0.900); const h01=vv(0.10,0.850,-0.420); const h02=vv(0.10,0.865,0); const h03=vv(0.10,0.850,0.420); const h04=vv(0.10,0.820,0.900);
+// Row 1
+const h10=vv(0.70,0.815,-0.912); const h11=vv(0.70,0.845,-0.420); const h12=vv(0.70,0.860,0); const h13=vv(0.70,0.845,0.420); const h14=vv(0.70,0.815,0.912);
+// Row 2 (peak of hood crown)
+const h20=vv(1.30,0.800,-0.920); const h21=vv(1.30,0.832,-0.420); const h22=vv(1.30,0.848,0); const h23=vv(1.30,0.832,0.420); const h24=vv(1.30,0.800,0.920);
+// Row 3
+const h30=vv(1.90,0.745,-0.910); const h31=vv(1.90,0.775,-0.410); const h32=vv(1.90,0.790,0); const h33=vv(1.90,0.775,0.410); const h34=vv(1.90,0.745,0.910);
+// Row 4 — front edge
+const h40=vv(2.40,0.680,-0.895); const h41=vv(2.40,0.705,-0.400); const h42=vv(2.40,0.718,0); const h43=vv(2.40,0.705,0.400); const h44=vv(2.40,0.680,0.895);
+
+/* WINDSHIELD */
+const ws0=vv(0.08,0.820,-0.890); const ws1=vv(0.08,0.820,0.890);
+const ws2=vv(-0.55,0.980,0.700); const ws3=vv(-0.55,0.980,-0.700);
+
+/* A-PILLAR LEFT */
+const ap0=vv(0.06,0.815,-0.902); const ap1=vv(-0.02,0.820,-0.905);
+const ap2=vv(-0.58,0.978,-0.702); const ap3=vv(-0.55,0.982,-0.700);
+
+/* FENDER LEFT — upper panels */
+const f00=vv(0.10,0.820,-0.900); const f01=vv(0.10,0.420,-1.000);
+const f10=vv(0.70,0.815,-0.912); const f11=vv(0.70,0.420,-1.020);
+const f20=vv(1.30,0.800,-0.920); const f21=vv(1.30,0.420,-1.018);
+const f30=vv(1.90,0.745,-0.910); const f31=vv(1.90,0.430,-1.008);
+const f40=vv(2.40,0.680,-0.895); const f41=vv(2.40,0.445,-0.990);
+
+/* FENDER LEFT — lower panels (wheel arch transition) */
+const fl0=vv(0.10,0.420,-1.000); const fl1=vv(0.10,0.020,-0.970);
+const fl2=vv(0.70,0.420,-1.020); const fl3=vv(0.70,0.015,-0.980);
+// Wheel arch: left side
+const wa_top=vv(0.78,-0.08,-1.040);
+const wa0=vv(0.38,-0.25,-0.995); const wa1=vv(0.20,-0.32,-0.950); const wa2=vv(0.12,-0.35,-0.890);
+const wa3=vv(1.35,-0.25,-0.995); const wa4=vv(1.55,-0.32,-0.950); const wa5=vv(1.62,-0.35,-0.890);
+const waf=vv(0.78,0.00,-1.040);
+
+/* FRONT FENDER lower continuation */
+const ff0=vv(1.90,0.430,-1.008); const ff1=vv(1.90,-0.010,-0.985);
+const ff2=vv(2.40,0.445,-0.990); const ff3=vv(2.40,-0.015,-0.975);
+
+/* BUMPER — upper section */
+const bu00=vv(2.40,0.680,-0.895); const bu01=vv(2.40,0.680,0.895);
+const bu10=vv(2.55,0.660,-0.885); const bu11=vv(2.55,0.660,0.885);
+const bu20=vv(2.58,0.480,-0.870); const bu21=vv(2.58,0.480,0.870);
+const bu30=vv(2.55,0.300,-0.855); const bu31=vv(2.55,0.300,0.855);
+
+/* BUMPER — main face with grille area */
+const bm00=vv(2.58,0.480,-0.870); const bm01=vv(2.58,0.480,0.870);
+// Grille zone: Z = -0.600 to 0.600, Y = 0.30 to 0.60
+const bg0=vv(2.59,0.590,-0.580); const bg1=vv(2.59,0.590,0.580);
+const bg2=vv(2.59,0.320,-0.600); const bg3=vv(2.59,0.320,0.600);
+// Bumper sides:
+const bs0=vv(2.58,0.480,-0.870); const bs1=vv(2.55,0.300,-0.855);
+const bs2=vv(2.48,0.115,-0.840); const bs3=vv(2.40,-0.015,-0.975);
+const bs4=vv(2.58,0.480,0.870); const bs5=vv(2.55,0.300,0.855);
+const bs6=vv(2.48,0.115,0.840); const bs7=vv(2.40,-0.015,0.975);
+
+/* LOWER BUMPER */
+const bl00=vv(2.55,0.300,-0.855); const bl01=vv(2.55,0.300,0.855);
+const bl10=vv(2.52,0.115,-0.840); const bl11=vv(2.52,0.115,0.840);
+const bl20=vv(2.48,-0.080,-0.820); const bl21=vv(2.48,-0.080,0.820);
+const bl30=vv(2.42,-0.160,-0.800); const bl31=vv(2.42,-0.160,0.800);
+
+/* HEADLIGHT LEFT */
+const hl00=vv(2.38,0.680,-0.895); const hl01=vv(2.38,0.680,-0.600);
+const hl10=vv(2.56,0.660,-0.885); const hl11=vv(2.56,0.660,-0.590);
+const hl20=vv(2.59,0.490,-0.870); const hl21=vv(2.59,0.490,-0.575);
+const hl30=vv(2.40,0.445,-0.880); const hl31=vv(2.40,0.445,-0.570);
+// Headlight inner
+const hi00=vv(2.52,0.640,-0.870); const hi01=vv(2.52,0.640,-0.615);
+const hi10=vv(2.57,0.520,-0.855); const hi11=vv(2.57,0.520,-0.600);
+const hi20=vv(2.52,0.480,-0.855); const hi21=vv(2.52,0.480,-0.600);
+// DRL strip
+const drl0=vv(2.58,0.645,-0.880); const drl1=vv(2.58,0.645,-0.612);
+const drl2=vv(2.58,0.622,-0.885); const drl3=vv(2.58,0.622,-0.615);
+// Projector lens
+const proj0=vv(2.585,0.568,-0.780); const proj1=vv(2.585,0.568,-0.658);
+const proj2=vv(2.585,0.512,-0.780); const proj3=vv(2.585,0.512,-0.658);
+
+/* FRONT LOWER BODY */
+const lb00=vv(0.10,0.020,-0.970); const lb01=vv(0.10,0.020,0.970);
+const lb10=vv(2.40,-0.015,-0.975); const lb11=vv(2.40,-0.015,0.975);
+const lb20=vv(2.42,-0.160,-0.800); const lb21=vv(2.42,-0.160,0.800);
+const lb30=vv(0.10,-0.160,-0.800); const lb31=vv(0.10,-0.160,0.800);
+
+/* UNDERTRAY */
+const ut0=vv(0.10,-0.160,-0.800); const ut1=vv(0.10,-0.160,0.800);
+const ut2=vv(2.42,-0.160,-0.800); const ut3=vv(2.42,-0.160,0.800);
+
+/* FIREWALL */
+const fw0=vv(-0.20,0.820,-0.900); const fw1=vv(-0.20,0.820,0.900);
+const fw2=vv(-0.20,-0.160,-0.800); const fw3=vv(-0.20,-0.160,0.800);
+const fw4=vv(0.10,0.820,-0.900); const fw5=vv(0.10,0.820,0.900);
+const fw6=vv(0.10,-0.160,-0.800); const fw7=vv(0.10,-0.160,0.800);
+
+/* WHEEL — Left front at X=0.78, Y=-0.35, Z=-1.0 */
+function wheelPts(cx,cy,cz,r,segs){
+  const pts=[];
+  for(let i=0;i<segs;i++){const a=(i/segs)*Math.PI*2;pts.push(vv(cx,cy+Math.sin(a)*r,cz+Math.cos(a)*r));}
+  return pts;
+}
+const W_CX=0.78, W_CY=-0.355, W_CZ=-1.055;
+const tire_outer=wheelPts(W_CX,W_CY,W_CZ,0.340,24);
+const tire_inner=wheelPts(W_CX,W_CY,W_CZ,0.265,24);
+const rim_outer=wheelPts(W_CX,W_CY,W_CZ,0.262,24);
+const rim_inner=wheelPts(W_CX,W_CY,W_CZ,0.130,24);
+// Brake disc
+const disc=wheelPts(W_CX+0.055,W_CY,W_CZ,0.180,24);
+const disc_inner=wheelPts(W_CX+0.055,W_CY,W_CZ,0.085,24);
+
+/* SUSPENSION — simplified strut */
+const sus0=vv(W_CX-0.05,W_CY+0.340,-1.020); const sus1=vv(W_CX-0.05,W_CY+0.340,-0.955);
+const sus2=vv(W_CX,0.380,-0.940); const sus3=vv(W_CX,0.380,-0.900);
+const sus4=vv(W_CX,0.560,-0.920); const sus5=vv(W_CX,0.560,-0.895);
+
+/* ─── FACE DEFINITIONS ─── */
+// face: { verts:[v0,v1,v2,v3], baseColor, group }
+const FACES=[];
+function addFace(vIdxs, col, grp='body', feaStress=0.5){
+  FACES.push({v:vIdxs, col, grp, s:feaStress});
+}
+
+// HOOD faces (quads split into row pairs)
+addFace([h00,h10,h11,h01],'#2A4A90','hood',0.1);
+addFace([h01,h11,h12,h02],'#2D4E98','hood',0.08);
+addFace([h02,h12,h13,h03],'#2D4E98','hood',0.08);
+addFace([h03,h13,h14,h04],'#2A4A90','hood',0.1);
+addFace([h10,h20,h21,h11],'#2C4C94','hood',0.12);
+addFace([h11,h21,h22,h12],'#2F5098','hood',0.09);
+addFace([h12,h22,h23,h13],'#2F5098','hood',0.09);
+addFace([h13,h23,h24,h14],'#2C4C94','hood',0.12);
+addFace([h20,h30,h31,h21],'#284888','hood',0.15);
+addFace([h21,h31,h32,h22],'#2B4C8E','hood',0.12);
+addFace([h22,h32,h33,h23],'#2B4C8E','hood',0.12);
+addFace([h23,h33,h34,h24],'#284888','hood',0.15);
+addFace([h30,h40,h41,h31],'#264280','hood',0.2);
+addFace([h31,h41,h42,h32],'#284588','hood',0.18);
+addFace([h32,h42,h43,h33],'#284588','hood',0.18);
+addFace([h33,h43,h44,h34],'#264280','hood',0.2);
+
+// WINDSHIELD
+addFace([ws0,ws1,ws2,ws3],'#3A5F8A','glass',0.05);
+
+// A-PILLAR
+addFace([ap0,ap1,ap2,ap3],'#1A2A40','pillar',0.05);
+
+// FENDER LEFT — upper
+addFace([f00,f10,f11,f01],'#243F80','fender',0.15);
+addFace([f10,f20,f21,f11],'#2545868','fender',0.2);
+addFace([f20,f30,f31,f21],'#234080','fender',0.25);
+addFace([f30,f40,f41,f31],'#1E3870','fender',0.35);
+
+// FENDER lower
+addFace([fl0,fl2,fl3,fl1],'#1E3468','fender',0.2);
+
+// FRONT FENDER lower
+addFace([ff0,ff2,ff3,ff1],'#1C3265','fender',0.3);
+
+// BUMPER UPPER
+addFace([bu00,bu01,bu11,bu10],'#606878','bumper',0.45);
+addFace([bu10,bu11,bu21,bu20],'#5A6270','bumper',0.5);
+addFace([bu20,bu21,bu31,bu30],'#545E6C','bumper',0.55);
+
+// BUMPER FACE (sides of grille box)
+addFace([bu20,bg0,bg2,bs2],'#505862','bumper',0.6);
+addFace([bu21,bg1,bg3,bs6],'#505862','bumper',0.6);
+
+// BUMPER LOWER
+addFace([bl00,bl01,bl11,bl10],'#4C5560','bumper',0.7);
+addFace([bl10,bl11,bl21,bl20],'#484E58','bumper',0.75);
+addFace([bl20,bl21,bl31,bl30],'#424850','bumper',0.85);
+
+// GRILLE background (dark)
+addFace([bg0,bg1,bg3,bg2],'#0A0E14','grille',0.6);
+
+// HEADLIGHT LEFT — outer lens
+addFace([hl00,hl10,hl11,hl01],'#9AAEC8','headlight',0.4);
+addFace([hl10,hl20,hl21,hl11],'#8EA4BE','headlight',0.4);
+addFace([hl20,hl30,hl31,hl21],'#8498B0','headlight',0.4);
+// Headlight reflector
+addFace([hi00,hi10,hi11,hi01],'#C8D8E8','headlight_inner',0.4);
+addFace([hi10,hi20,hi21,hi11],'#C0D0E0','headlight_inner',0.4);
+// DRL LED strip
+addFace([drl0,drl1,drl3,drl2],'#FFFFFF','drl',0.4);
+// Projector lens
+addFace([proj0,proj1,proj3,proj2],'#D0E8FF','projector',0.4);
+
+// LOWER BODY
+addFace([lb00,lb10,lb11,lb01],'#1E3468','body',0.3);
+addFace([lb10,lb20,lb21,lb11],'#1A2E5C','body',0.3);
+addFace([lb20,lb30,lb31,lb21],'#162856','body',0.3);
+
+// UNDERTRAY
+addFace([ut0,ut2,ut3,ut1],'#0E1A30','undertray',0.2);
+
+// FIREWALL
+addFace([fw0,fw4,fw6,fw2],'#1A3060','firewall',0.1);
+addFace([fw4,fw5,fw7,fw6],'#243870','firewall',0.1);
+
+// SUSPENSION
+addFace([sus0,sus2,sus3,sus1],'#505868','suspension',0.3);
+addFace([sus2,sus4,sus5,sus3],'#484E60','suspension',0.25);
+
+// HOOD EDGE (front trim)
+addFace([h40,h44,bu01,bu00],'#1A2A50','trim',0.3);
+
+/* ─── FEA STRESS COLORS ─── */
+function stressColor(s){
+  // s: 0..1 → blue(0) → cyan → green → yellow → orange → red(1)
+  const stops=[[0,0,200],[0,100,255],[0,220,180],[80,220,0],[255,200,0],[255,100,0],[255,0,0]];
+  const t=s*6; const i=Math.min(5,Math.floor(t)); const f=t-i;
+  const a=stops[i],b=stops[i+1];
+  return `rgb(${Math.round(a[0]+(b[0]-a[0])*f)},${Math.round(a[1]+(b[1]-a[1])*f)},${Math.round(a[2]+(b[2]-a[2])*f)})`;
+}
+
+/* ─── PARTICLES (CFD) ─── */
+function initParticles(){
+  particles=[];
+  const W=canvas.width;
+  for(let i=0;i<180;i++){
+    particles.push({
+      x:Math.random()*W*0.15, y:Math.random()*canvas.height,
+      vx:2+Math.random()*1.5, vy:(Math.random()-0.5)*0.3,
+      life:Math.random(), maxlife:1.0,
+      speed:2+Math.random()*1.5
+    });
+  }
+}
+
+/* ─── DRAW CIRCLE FACE ─── */
+function drawCircleFace(projPts, fillStyle, strokeStyle, lw=0.5){
+  if(projPts.length<3)return;
+  ctx.beginPath();
+  ctx.moveTo(projPts[0][0],projPts[0][1]);
+  projPts.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));
+  ctx.closePath();
+  if(fillStyle){ctx.fillStyle=fillStyle;ctx.fill();}
+  if(strokeStyle){ctx.strokeStyle=strokeStyle;ctx.lineWidth=lw;ctx.stroke();}
+}
+
+/* ─── WHEEL RENDERING ─── */
+function drawWheel(m,W,H,alpha){
+  if(alpha<0.01) return;
+  ctx.save(); ctx.globalAlpha=alpha;
+  const prjAll=(arr)=>arr.map(vi=>pr(tr(VERTS[vi],m),W,H));
+
+  // TIRE sidewall
+  const to=prjAll(tire_outer);
+  const ti=prjAll(tire_inner);
+  ctx.fillStyle='#121212';
+  drawCircleFace(to,'#141414',null);
+  // Tire tread ring
+  for(let i=0;i<24;i++){
+    const i2=(i+1)%24;
+    ctx.beginPath();
+    ctx.moveTo(to[i][0],to[i][1]);ctx.lineTo(to[i2][0],to[i2][1]);
+    ctx.lineTo(ti[i2][0],ti[i2][1]);ctx.lineTo(ti[i][0],ti[i][1]);
+    ctx.closePath();
+    const sc=i%3===0?'#252525':'#1a1a1a';
+    ctx.fillStyle=sc; ctx.fill();
+    ctx.strokeStyle='#0a0a0a';ctx.lineWidth=0.4;ctx.stroke();
+  }
+
+  // RIM
+  const ro=prjAll(rim_outer);
+  const ri=prjAll(rim_inner);
+  drawCircleFace(ro,'#888FA0','#606878',0.8);
+  // Spokes (6 spokes)
+  const cpt=pr(tr(VERTS[W_CX>0.5?rim_outer[0]:rim_outer[0]],m),W,H); // centre
+  const cx_c=pr(tr([W_CX,W_CY,W_CZ],m),W,H);
+  for(let s=0;s<6;s++){
+    const a=(s/6)*Math.PI*2;
+    const a1=(s/6+1/12)*Math.PI*2;
+    const a2=(s/6-1/12)*Math.PI*2;
+    const ro1=prjAll([rim_outer[Math.round(s/6*24)%24]]);
+    const ri1=prjAll([rim_inner[Math.round(s/6*24)%24]]);
+    const riN1=prjAll([rim_inner[(Math.round(s/6*24)+2)%24]]);
+    const riN2=prjAll([rim_inner[(Math.round(s/6*24)-2+24)%24]]);
+    ctx.beginPath();
+    ctx.moveTo(ro1[0][0],ro1[0][1]);
+    ctx.lineTo(riN1[0][0],riN1[0][1]);
+    ctx.lineTo(cx_c[0],cx_c[1]);
+    ctx.lineTo(riN2[0][0],riN2[0][1]);
+    ctx.closePath();
+    ctx.fillStyle=`hsl(215,${10+s*3}%,${45+s*2}%)`;
+    ctx.fill();
+    ctx.strokeStyle='#505868';ctx.lineWidth=0.6;ctx.stroke();
+  }
+  // Hub cap
+  drawCircleFace(ri,'#6A7080','#505868',0.8);
+  // Hub centre circle
+  const hub=pr(tr([W_CX,W_CY,W_CZ],m),W,H);
+  ctx.beginPath();ctx.arc(hub[0],hub[1],5*zoom,0,Math.PI*2);
+  ctx.fillStyle='#303848';ctx.fill();ctx.strokeStyle='#606878';ctx.lineWidth=1;ctx.stroke();
+
+  // BRAKE DISC
+  const di=prjAll(disc); const dii=prjAll(disc_inner);
+  drawCircleFace(di,'rgba(90,96,108,0.7)',null);
+  // Ventilation slots
+  for(let k=0;k<12;k++){
+    const i1=k*2, i2=(k*2+1)%24;
+    ctx.beginPath();ctx.moveTo(di[i1][0],di[i1][1]);ctx.lineTo(dii[i1][0],dii[i1][1]);
+    ctx.strokeStyle='rgba(40,44,52,0.8)';ctx.lineWidth=1.2;ctx.stroke();
+  }
+  drawCircleFace(dii,'rgba(60,65,75,0.5)',null);
+
+  // BRAKE CALIPER (red, offset left/front)
+  const calX=W_CX+0.05, calY=W_CY-0.08, calZ=W_CZ+0.055;
+  const cp=[
+    pr(tr([calX,calY-0.110,calZ+0.175],m),W,H),
+    pr(tr([calX,calY+0.110,calZ+0.175],m),W,H),
+    pr(tr([calX,calY+0.110,calZ-0.010],m),W,H),
+    pr(tr([calX,calY-0.110,calZ-0.010],m),W,H),
+  ];
+  drawCircleFace(cp,'#CC2222','#991111',1);
+  // Caliper bolts
+  [calY-0.06,calY+0.06].forEach(by=>{
+    const bp=pr(tr([calX+0.01,by,calZ+0.09],m),W,H);
+    ctx.beginPath();ctx.arc(bp[0],bp[1],3*zoom,0,Math.PI*2);
+    ctx.fillStyle='#888';ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+/* ─── GRILLE SLATS ─── */
+function drawGrille(m,W,H,alpha){
+  if(alpha<0.01)return;
+  ctx.save();ctx.globalAlpha=alpha;
+  // 8 horizontal slats
+  for(let i=0;i<8;i++){
+    const t=i/7; const y1=0.310+t*(0.570-0.310); const y2=y1+0.025;
+    const slat=[
+      pr(tr([2.592,y1,-0.575],m),W,H),pr(tr([2.592,y1,0.575],m),W,H),
+      pr(tr([2.592,y2,0.575],m),W,H),pr(tr([2.592,y2,-0.575],m),W,H),
+    ];
+    drawCircleFace(slat,'#1C2530','#0A1018',0.6);
+  }
+  // 5 vertical slats
+  for(let j=0;j<5;j++){
+    const t=j/4; const z=(t-0.5)*1.10;
+    const slat=[
+      pr(tr([2.592,0.310,z-0.020],m),W,H),pr(tr([2.592,0.310,z+0.020],m),W,H),
+      pr(tr([2.592,0.575,z+0.020],m),W,H),pr(tr([2.592,0.575,z-0.020],m),W,H),
+    ];
+    drawCircleFace(slat,'#1E2836','#0C1420',0.5);
+  }
+  // Logo area (centre badge)
+  const badge=pr(tr([2.596,0.440,0],m),W,H);
+  ctx.beginPath();ctx.arc(badge[0],badge[1],9*zoom,0,Math.PI*2);
+  ctx.fillStyle='#F5A800';ctx.fill();
+  ctx.beginPath();ctx.arc(badge[0],badge[1],6*zoom,0,Math.PI*2);
+  ctx.fillStyle='#0A0E14';ctx.fill();
+  ctx.restore();
+}
+
+/* ─── WIRING HARNESS OVERLAY ─── */
+function drawHarness(m,W,H){
+  ctx.save();
+  const route=(pts3d,col,lw,glow)=>{
+    const prj=pts3d.map(p=>pr(tr(p,m),W,H));
+    if(glow){ctx.shadowColor=col;ctx.shadowBlur=12;}
+    ctx.strokeStyle=col;ctx.lineWidth=lw*zoom;
+    ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(prj[0][0],prj[0][1]);
+    prj.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));
+    ctx.stroke();
+    ctx.shadowBlur=0;
+    // connector dots
+    [prj[0],prj[prj.length-1]].forEach(p=>{
+      ctx.beginPath();ctx.arc(p[0],p[1],3*zoom,0,Math.PI*2);
+      ctx.fillStyle=col;ctx.fill();
+    });
+  };
+  const lbl=(pos3d,text,col)=>{
+    const p=pr(tr(pos3d,m),W,H);
+    ctx.font=`700 ${Math.round(10*zoom)}px 'Barlow Condensed',sans-serif`;
+    ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=8;
+    ctx.fillText(text,p[0]+6*zoom,p[1]-4*zoom);
+    ctx.shadowBlur=0;
+  };
+
+  // BATTERY MAIN POSITIVE (red, thick)
+  route([[0.0,-0.05,-0.85],[0.4,-0.05,-0.88],[0.78,-0.05,-0.88],[1.2,-0.05,-0.88],[1.8,-0.05,-0.88],[2.3,-0.05,-0.80],[2.42,-0.05,-0.70]],'#FF3333',3.5,true);
+  lbl([1.0,-0.02,-0.88],'BATT +12V','#FF5555');
+
+  // CHASSIS GROUND (black/dark)
+  route([[0.0,-0.12,-0.80],[0.5,-0.12,-0.82],[1.0,-0.12,-0.82],[1.5,-0.12,-0.80],[2.0,-0.12,-0.78],[2.4,-0.12,-0.70]],'#444444',2.5,false);
+  lbl([0.7,-0.09,-0.82],'GND','#888');
+
+  // ENGINE ECU HARNESS (yellow)
+  route([[0.15,0.10,-0.60],[0.4,0.15,-0.65],[0.78,0.20,-0.70],[1.1,0.22,-0.72],[1.5,0.18,-0.68],[2.0,0.12,-0.60],[2.4,0.10,-0.55]],'#FFCC00',2.5,true);
+  lbl([0.9,0.25,-0.72],'ECU HARNESS','#FFDD44');
+
+  // HEADLIGHT CIRCUIT LEFT (white)
+  route([[0.78,0.20,-0.70],[1.2,0.30,-0.78],[1.8,0.38,-0.82],[2.2,0.42,-0.84],[2.42,0.50,-0.86]],'#DDDDFF',2,true);
+  lbl([1.9,0.44,-0.84],'HEADLIGHT','#CCCCFF');
+
+  // CAN BUS HIGH (cyan)
+  route([[0.05,0.05,-0.50],[0.4,0.08,-0.54],[0.9,0.10,-0.58],[1.4,0.10,-0.58],[1.9,0.08,-0.54],[2.3,0.05,-0.50]],'#00CCFF',1.8,true);
+  lbl([1.1,0.13,-0.58],'CAN HI','#00CCFF');
+
+  // CAN BUS LOW (green)
+  route([[0.05,0.00,-0.48],[0.4,0.03,-0.52],[0.9,0.05,-0.56],[1.4,0.05,-0.56],[1.9,0.03,-0.52],[2.3,0.00,-0.48]],'#00FF88',1.8,true);
+  lbl([1.1,0.08,-0.56],'CAN LO','#00FF88');
+
+  // ABS SENSOR left wheel (orange)
+  route([[W_CX,W_CY+0.20,-0.98],[W_CX,W_CY+0.30,-0.95],[W_CX+0.1,W_CY+0.30,-0.90],[0.6,0.05,-0.86],[0.4,0.05,-0.84],[0.15,0.05,-0.80]],'#FF8800',1.5,true);
+  lbl([0.7,0.08,-0.87],'ABS','#FF8800');
+
+  // FUSE BOX (at firewall) marker
+  const fb=pr(tr([0.05,0.30,-0.70],m),W,H);
+  ctx.beginPath();ctx.rect(fb[0]-15*zoom,fb[1]-10*zoom,30*zoom,20*zoom);
+  ctx.strokeStyle='#FFCC00';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);
+  ctx.font=`700 ${Math.round(8*zoom)}px 'Barlow Condensed',sans-serif`;
+  ctx.fillStyle='#FFCC00';ctx.fillText('FUSE BOX',fb[0]-12*zoom,fb[1]+18*zoom);
+
+  ctx.restore();
+}
+
+/* ─── FEA VISUALIZATION ─── */
+function feaStressForFace(face, t){
+  let s=face.s;
+  // Animate crash wave from front
+  const frontFaces=['bumper','grille','headlight','headlight_inner','drl','projector'];
+  const midFaces=['fender','hood'];
+  const backFaces=['body','firewall','undertray','glass','pillar'];
+  if(frontFaces.includes(face.grp)){s=Math.min(1.0,s+0.5+Math.sin(t*2)*0.1);}
+  else if(midFaces.includes(face.grp)){
+    const delay=0.8;
+    s=Math.min(0.85,s+Math.max(0,t-delay)*0.4);
+  }else{
+    s=Math.min(0.25,s*0.5);
+  }
+  return Math.max(0,Math.min(1,s));
+}
+
+/* ─── CFD PARTICLES ─── */
+function updateCFD(W,H){
+  cfdTime+=0.018;
+  particles.forEach(p=>{
+    p.x+=p.vx*(1+Math.sin(p.y/H*Math.PI)*0.5);
+    p.y+=p.vy+Math.sin(p.x/W*3+cfdTime)*0.4;
+    p.life+=0.008;
+    if(p.life>=p.maxlife||p.x>W*0.85){
+      p.x=Math.random()*W*0.08;
+      p.y=canvas.height*0.15+Math.random()*canvas.height*0.72;
+      p.vx=2+Math.random()*1.5;
+      p.vy=(Math.random()-0.5)*0.2;
+      p.life=0;p.speed=2+Math.random()*1.5;
+    }
+  });
+}
+
+function drawCFD(W,H){
+  ctx.save();
+  particles.forEach(p=>{
+    const speed=p.vx*(1+Math.sin(p.y/H*Math.PI)*0.5);
+    const t=Math.min(1,speed/4.5);
+    const r=Math.round(t<0.5?0:lerp(0,255,(t-0.5)*2));
+    const g=Math.round(t<0.5?lerp(50,200,t*2):lerp(200,100,(t-0.5)*2));
+    const b=Math.round(t<0.5?lerp(220,0,t*2):0);
+    const alpha=0.5+0.4*(1-p.life/p.maxlife);
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,1.2+t*1.5,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
+    ctx.fill();
+  });
+  // Stagnation point label
+  const stag_pt=pr(tr([2.62,0.38,0],mat(rx,ry,rz)),W,H);
+  ctx.beginPath();ctx.arc(stag_pt[0],stag_pt[1],8,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,100,0.7)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.font='bold 10px "Barlow Condensed",sans-serif';
+  ctx.fillStyle='rgba(255,255,150,0.8)';
+  ctx.fillText('STAGNATION',stag_pt[0]+10,stag_pt[1]+3);
+  // High velocity label over hood
+  const hood_pt=pr(tr([1.5,1.0,0],mat(rx,ry,rz)),W,H);
+  ctx.fillStyle='rgba(100,200,255,0.7)';
+  ctx.fillText('HIGH VELOCITY',hood_pt[0]-20,hood_pt[1]-8);
+  ctx.restore();
+}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+/* ─── MAIN RENDER ─── */
+function render(){
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  const grad=ctx.createRadialGradient(W*0.42,H*0.52,0,W*0.42,H*0.52,Math.max(W,H)*0.72);
+  grad.addColorStop(0,'#0D1828');grad.addColorStop(0.6,'#080E1C');grad.addColorStop(1,'#040810');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+
+  // Floor grid
+  const m=mat(rx,ry,rz);
+  ctx.strokeStyle='rgba(245,168,0,0.04)';ctx.lineWidth=1;
+  for(let i=-6;i<=6;i++){
+    const x=i*0.5;
+    const a=pr(tr([x,-0.165,-3.5],m),W,H),b=pr(tr([x,-0.165,3.5],m),W,H);
+    ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+    const c=pr(tr([-3,- 0.165,x],m),W,H),d=pr(tr([3,-0.165,x],m),W,H);
+    ctx.beginPath();ctx.moveTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();
+  }
+
+  // Shadow
+  const sc=pr(tr([1.2,-0.162,0],m),W,H);
+  const sg=ctx.createRadialGradient(sc[0],sc[1],0,sc[0],sc[1],160*zoom);
+  sg.addColorStop(0,'rgba(0,0,0,0.5)');sg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=sg;ctx.beginPath();ctx.ellipse(sc[0],sc[1],160*zoom,40*zoom,0,0,Math.PI*2);ctx.fill();
+
+  // Build draw list
+  const calls=[];
+  const wireMode=(mode==='wire');
+  const harnessMode=(mode==='harness');
+  const feaMode=(mode==='fea');
+  const cfdMode=(mode==='cfd');
+  const bodyAlpha=harnessMode?0.22:cfdMode?0.40:1.0;
+
+  FACES.forEach((face,fi)=>{
+    const worldVerts=face.v.slice(0,4).map(vi=>VERTS[vi]);
+    const rotVerts=worldVerts.map(v=>tr(v,m));
+    const projVerts=rotVerts.map(v=>pr(v,W,H));
+    const d=depth(projVerts);
+    const n2d=fn2d(projVerts);
+    calls.push({projVerts,rotVerts,worldVerts,n2d,d,face,fi});
+  });
+
+  calls.sort((a,b)=>a.d-b.d);
+
+  calls.forEach(({projVerts,rotVerts,worldVerts,n2d,face})=>{
+    if(!wireMode&&n2d>0)return; // backface cull
+
+    if(wireMode){
+      ctx.beginPath();
+      ctx.moveTo(projVerts[0][0],projVerts[0][1]);
+      projVerts.forEach(p=>ctx.lineTo(p[0],p[1]));
+      ctx.closePath();
+      const bf=n2d>0;
+      ctx.strokeStyle=bf?'rgba(245,168,0,0.1)':'rgba(245,168,0,0.7)';
+      ctx.lineWidth=bf?0.3:0.8;
+      ctx.stroke();
+      // Vertex dots on front faces
+      if(!bf){
+        projVerts.forEach(p=>{
+          ctx.beginPath();ctx.arc(p[0],p[1],1.2,0,Math.PI*2);
+          ctx.fillStyle='rgba(85,153,255,0.6)';ctx.fill();
+        });
+      }
+      return;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(projVerts[0][0],projVerts[0][1]);
+    projVerts.forEach(p=>ctx.lineTo(p[0],p[1]));
+    ctx.closePath();
+
+    let fillCol, alpha=bodyAlpha;
+    if(feaMode){
+      fillCol=stressColor(feaStressForFace(face,feaTime));
+      alpha=0.92;
+    } else {
+      fillCol=litColor(face.col,rotVerts,alpha);
+    }
+
+    // Special materials
+    if(face.grp==='glass'&&!feaMode){
+      ctx.globalAlpha=0.35;
+      ctx.fillStyle='rgba(80,150,220,0.5)';ctx.fill();
+      ctx.strokeStyle='rgba(120,180,240,0.6)';ctx.lineWidth=0.8;ctx.stroke();
+      ctx.globalAlpha=1;return;
+    }
+    if(face.grp==='drl'&&!feaMode&&!harnessMode){
+      ctx.globalAlpha=0.9;
+      ctx.fillStyle='#F0F8FF';
+      ctx.shadowColor='#AADDFF';ctx.shadowBlur=14;
+      ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;return;
+    }
+    if(face.grp==='projector'&&!feaMode&&!harnessMode){
+      ctx.globalAlpha=0.85;
+      ctx.fillStyle='#C8E8FF';
+      ctx.shadowColor='#88CCFF';ctx.shadowBlur=10;
+      ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;return;
+    }
+    if(face.grp==='grille'){
+      ctx.globalAlpha=alpha;
+      ctx.fillStyle='#090D14';ctx.fill();
+      ctx.strokeStyle='rgba(245,168,0,0.08)';ctx.lineWidth=0.4;ctx.stroke();
+      ctx.globalAlpha=1;return;
+    }
+
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=fillCol;ctx.fill();
+    const edgeCol=feaMode?'rgba(0,0,0,0.2)':wireMode?'rgba(245,168,0,.3)':'rgba(245,168,0,0.12)';
+    ctx.strokeStyle=edgeCol;ctx.lineWidth=0.5;ctx.stroke();
+    ctx.globalAlpha=1;
+  });
+
+  drawGrille(m,W,H,wireMode?0:harnessMode?0.15:feaMode?0.3:1.0);
+  drawWheel(m,W,H,wireMode?0:harnessMode?0.25:feaMode?0.55:cfdMode?0.5:1.0);
+
+  if(harnessMode)drawHarness(m,W,H);
+  if(cfdMode){updateCFD(W,H);drawCFD(W,H);}
+
+  // AXES
+  const axOri=pr(tr([-0.2,-0.15,-0.8],m),W,H);
+  [[1.8,-0.15,-0.8,'#FF5555','X (Length)'],[-0.2,0.7,-0.8,'#55FF88','Y (Height)'],[-0.2,-0.15,0.8,'#5588FF','Z (Width)']].forEach(([ax,ay,az,col,lbl])=>{
+    const ep=pr(tr([ax,ay,az],m),W,H);
+    ctx.save();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.globalAlpha=0.7;
+    ctx.beginPath();ctx.moveTo(axOri[0],axOri[1]);ctx.lineTo(ep[0],ep[1]);ctx.stroke();
+    const dx=ep[0]-axOri[0],dy=ep[1]-axOri[1],l=Math.sqrt(dx*dx+dy*dy);
+    if(l>4){const ux=dx/l,uy=dy/l;ctx.globalAlpha=0.9;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(ep[0],ep[1]);ctx.lineTo(ep[0]-ux*12+uy*5,ep[1]-uy*12-ux*5);ctx.lineTo(ep[0]-ux*12-uy*5,ep[1]-uy*12+ux*5);ctx.closePath();ctx.fill();}
+    ctx.globalAlpha=1;ctx.font=`bold 11px "Barlow Condensed",sans-serif`;ctx.fillStyle=col;
+    ctx.shadowColor=col;ctx.shadowBlur=6;ctx.fillText(lbl,ep[0]+8,ep[1]+4);ctx.shadowBlur=0;
+    ctx.restore();
+  });
+
+  // FEA animated deformation wave
+  if(feaMode&&feaTime<3){
+    const waveX=2.6-feaTime*0.8;
+    if(waveX>-0.2){
+      const wp=pr(tr([waveX,0.2,0],m),W,H);
+      ctx.save();ctx.globalAlpha=Math.max(0,0.6-feaTime*0.15);
+      const wg=ctx.createRadialGradient(wp[0],wp[1],0,wp[0],wp[1],80*zoom);
+      wg.addColorStop(0,'rgba(255,80,0,0.5)');wg.addColorStop(0.5,'rgba(255,180,0,0.2)');wg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=wg;ctx.fillRect(0,0,W,H);
+      ctx.restore();
+    }
+  }
+
+  // Watermark
+  ctx.save();ctx.globalAlpha=0.2;
+  ctx.font='700 10px "Barlow Condensed",sans-serif';ctx.fillStyle='#F5A800';
+  ctx.fillText('PUMO TECHNOVATION MALAYSIA · CAE SIMULATION',12,H-12);ctx.restore();
+
+  if(!autoRot&&(feaMode||cfdMode)){
+    feaTime+=0.018;
+    requestAnimationFrame(render);
+  }
+}
+
+// Init
+resize();
+syncSliders();
+if(!autoRot)render();
+
+// Auto-start FEA/CFD animation when switched to
+const origSetMode=window.setMode||setMode;
+</script>
+</body>
+</html>
